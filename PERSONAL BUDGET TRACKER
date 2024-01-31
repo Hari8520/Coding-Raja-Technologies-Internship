@@ -1,0 +1,84 @@
+import sqlite3
+from datetime import datetime
+
+# SQLite database file
+DB_FILE = 'budget_tracker.db'
+
+# Create SQLite database and table if they don't exist
+conn = sqlite3.connect(DB_FILE)
+cursor = conn.cursor()
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY,
+        type TEXT,
+        category TEXT,
+        amount REAL,
+        timestamp TEXT
+    )
+''')
+conn.commit()
+
+def add_transaction(transaction_type, category, amount):
+    timestamp = str(datetime.now())
+    cursor.execute('''
+        INSERT INTO transactions (type, category, amount, timestamp)
+        VALUES (?, ?, ?, ?)
+    ''', (transaction_type, category, amount, timestamp))
+    conn.commit()
+
+def calculate_budget():
+    cursor.execute('SELECT SUM(amount) FROM transactions WHERE type = "income"')
+    total_income = cursor.fetchone()[0] or 0
+
+    cursor.execute('SELECT SUM(amount) FROM transactions WHERE type = "expenses"')
+    total_expenses = cursor.fetchone()[0] or 0
+
+    remaining_budget = total_income - total_expenses
+    return remaining_budget
+
+def analyze_expenses():
+    cursor.execute('''
+        SELECT category, SUM(amount) FROM transactions
+        WHERE type = "expenses"
+        GROUP BY category
+    ''')
+    expense_analysis = dict(cursor.fetchall())
+    return expense_analysis
+
+while True:
+    print("\nOptions:")
+    print("1. Add Income")
+    print("2. Add Expense")
+    print("3. View Remaining Budget")
+    print("4. View Expense Analysis")
+    print("5. Quit")
+
+    choice = input("Enter your choice: ")
+
+    if choice == '1':
+        category = input("Enter income category: ")
+        amount = float(input("Enter income amount: "))
+        add_transaction('income', category, amount)
+
+    elif choice == '2':
+        category = input("Enter expense category: ")
+        amount = float(input("Enter expense amount: "))
+        add_transaction('expenses', category, amount)
+
+    elif choice == '3':
+        remaining_budget = calculate_budget()
+        print(f"Remaining Budget: ${remaining_budget}")
+
+    elif choice == '4':
+        expense_analysis = analyze_expenses()
+        print("Expense Analysis:")
+        for category, total_expense in expense_analysis.items():
+            print(f"{category}: ${total_expense}")
+
+    elif choice == '5':
+        conn.close()
+        print("Goodbye!")
+        break
+
+    else:
+        print("Invalid choice. Please try again.")
