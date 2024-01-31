@@ -1,0 +1,78 @@
+import json
+from datetime import datetime, timedelta
+
+# File to store tasks
+TASKS_FILE = 'tasks.json'
+
+# Load tasks from file or create an empty list
+try:
+    with open(TASKS_FILE, 'r') as file:
+        tasks = json.load(file)
+except FileNotFoundError:
+    tasks = []
+
+def save_tasks():
+    with open(TASKS_FILE, 'w') as file:
+        json.dump(tasks, file)
+
+def add_task(description, priority, due_date):
+    task = {
+        'description': description,
+        'priority': priority,
+        'due_date': due_date.strftime('%Y-%m-%d') if due_date else None,
+        'completed': False
+    }
+    tasks.append(task)
+    save_tasks()
+
+def remove_task(index):
+    if 0 <= index < len(tasks):
+        del tasks[index]
+        save_tasks()
+
+def mark_completed(index):
+    if 0 <= index < len(tasks):
+        tasks[index]['completed'] = True
+        save_tasks()
+
+def display_tasks():
+    print("Tasks:")
+    for i, task in enumerate(tasks):
+        status = 'Done' if task['completed'] else 'Pending'
+        print(f"{i + 1}. {task['description']} - Priority: {task['priority']} | Due Date: {task['due_date']} | Status: {status}")
+
+while True:
+    print("\nOptions:")
+    print("1. Add Task")
+    print("2. Remove Task")
+    print("3. Mark Task as Completed")
+    print("4. Display Tasks")
+    print("5. Quit")
+
+    choice = input("Enter your choice: ")
+
+    if choice == '1':
+        description = input("Enter task description: ")
+        priority = input("Enter task priority (high/medium/low): ")
+        due_date_str = input("Enter due date (YYYY-MM-DD) or leave blank: ")
+        due_date = datetime.strptime(due_date_str, '%Y-%m-%d') if due_date_str else None
+        add_task(description, priority, due_date)
+
+    elif choice == '2':
+        index = int(input("Enter the task number to remove: ")) - 1
+        remove_task(index)
+
+    elif choice == '3':
+        index = int(input("Enter the task number to mark as completed: ")) - 1
+        mark_completed(index)
+
+    elif choice == '4':
+        display_tasks()
+
+    elif choice == '5':
+        save_tasks()
+        print("Goodbye!")
+        break
+
+    else:
+        print("Invalid choice. Please try again.")
